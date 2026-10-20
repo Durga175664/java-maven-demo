@@ -1,10 +1,293 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Java Maven Demo</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Durga's First CI/CD Project</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #e5e7eb;
+      background: linear-gradient(-45deg, #0f2027, #203a43, #5b2a86, #1e3c72);
+      background-size: 400% 400%;
+      animation: bgShift 16s ease infinite;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Floating glowing blobs */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(70px);
+      opacity: 0.55;
+      z-index: 0;
+      animation: float 12s ease-in-out infinite;
+    }
+    .blob.b1 { width: 320px; height: 320px; background: #ff6ec4; top: -80px; left: -80px; }
+    .blob.b2 { width: 280px; height: 280px; background: #38ef7d; bottom: -90px; right: -60px; animation-delay: -4s; }
+    .blob.b3 { width: 220px; height: 220px; background: #4facfe; top: 55%; left: 8%; animation-delay: -8s; }
+
+    .card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 780px;
+      padding: 48px 40px 36px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.09);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 28px;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+      animation: rise 0.9s ease both;
+    }
+
+    .tag {
+      display: inline-block;
+      margin-bottom: 20px;
+      padding: 7px 18px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #c7d2fe;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+    }
+
+    .rocket {
+      display: block;
+      font-size: 3rem;
+      margin-bottom: 6px;
+      animation: bounce 2.4s ease-in-out infinite;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      line-height: 1.2;
+      margin-bottom: 16px;
+      background: linear-gradient(90deg, #ffffff, #a5f3fc, #f0abfc, #ffffff);
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      animation: shine 6s linear infinite;
+    }
+
+    .subtitle {
+      max-width: 560px;
+      margin: 0 auto 30px;
+      font-size: 1.08rem;
+      line-height: 1.7;
+      color: #d1d5db;
+    }
+
+    .subtitle strong {
+      color: #ffffff;
+      border-bottom: 2px solid #f0abfc;
+    }
+
+    /* Build status badge */
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 30px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #ffffff;
+      background: linear-gradient(135deg, #11998e, #38ef7d);
+      border-radius: 14px;
+      animation: glow 2.2s ease-in-out infinite;
+    }
+
+    .dot {
+      width: 14px;
+      height: 14px;
+      background: #ffffff;
+      border-radius: 50%;
+      animation: pulse 1.6s ease-out infinite;
+    }
+
+    /* Pipeline */
+    .pipeline {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: stretch;
+      gap: 12px;
+      margin-top: 38px;
+    }
+
+    .step {
+      flex: 1 1 130px;
+      max-width: 160px;
+      padding: 16px 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      transition: transform 0.3s ease, background 0.3s ease;
+      animation: rise 0.8s ease both;
+    }
+    .step:nth-child(1) { animation-delay: 0.2s; }
+    .step:nth-child(2) { animation-delay: 0.4s; }
+    .step:nth-child(3) { animation-delay: 0.6s; }
+    .step:nth-child(4) { animation-delay: 0.8s; }
+
+    .step:hover {
+      transform: translateY(-6px);
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    .step .icon { font-size: 1.7rem; display: block; margin-bottom: 6px; }
+    .step .name { font-size: 0.95rem; font-weight: 700; color: #ffffff; }
+    .step .ok   { display: block; margin-top: 4px; font-size: 0.8rem; color: #86efac; }
+
+    /* Fake terminal */
+    .terminal {
+      margin-top: 34px;
+      padding: 18px 20px;
+      text-align: left;
+      font-family: "Courier New", Consolas, monospace;
+      font-size: 0.88rem;
+      line-height: 1.8;
+      color: #86efac;
+      background: rgba(0, 0, 0, 0.55);
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .terminal .bar { display: flex; gap: 7px; margin-bottom: 10px; }
+    .terminal .bar i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+    .terminal .bar i:nth-child(1) { background: #ff5f56; }
+    .terminal .bar i:nth-child(2) { background: #ffbd2e; }
+    .terminal .bar i:nth-child(3) { background: #27c93f; }
+    .terminal .muted { color: #9ca3af; }
+
+    /* Tech chips */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 30px;
+    }
+    .chip {
+      padding: 7px 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #ffffff;
+      border-radius: 999px;
+    }
+    .chip.java    { background: linear-gradient(135deg, #f7971e, #ffd200); color: #1f2937; }
+    .chip.maven   { background: linear-gradient(135deg, #c33764, #1d2671); }
+    .chip.jenkins { background: linear-gradient(135deg, #d33833, #ff758c); }
+    .chip.tomcat  { background: linear-gradient(135deg, #f7b733, #fc4a1a); }
+
+    .footer {
+      margin-top: 28px;
+      font-size: 0.85rem;
+      color: #9ca3af;
+    }
+
+    /* Animations */
+    @keyframes bgShift {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50%      { transform: translate(40px, -50px) scale(1.15); }
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-10px); }
+    }
+    @keyframes shine {
+      to { background-position: 300% 0; }
+    }
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 12px rgba(56, 239, 125, 0.4); }
+      50%      { box-shadow: 0 0 32px rgba(56, 239, 125, 0.9); }
+    }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.8); }
+      100% { box-shadow: 0 0 0 14px rgba(255, 255, 255, 0); }
+    }
+
+    @media (max-width: 600px) {
+      .card { padding: 34px 20px 28px; }
+      h1 { font-size: 1.7rem; }
+      .subtitle { font-size: 0.95rem; }
+      .status { font-size: 1.05rem; padding: 12px 22px; }
+      .step { max-width: none; flex: 1 1 42%; }
+      .terminal { font-size: 0.78rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
 </head>
 <body>
-    <h1>Welcome to Java Maven Demo!</h1>
-    <p>My first Jenkins CI/CD project.</p>
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+
+  <main class="card">
+    <span class="tag">CI/CD Project Demo</span>
+    <span class="rocket">🚀</span>
+    <h1>Welcome to Durga's First CI/CD Project!</h1>
+    <p class="subtitle">
+      This website is automatically built and deployed using
+      <strong>Jenkins</strong>, <strong>Maven</strong>, and
+      <strong>Apache Tomcat</strong>.
+    </p>
+
+    <div class="status"><span class="dot"></span>Build Status: Successful!</div>
+
+    <div class="pipeline">
+      <div class="step"><span class="icon">💻</span><span class="name">Code</span><span class="ok">✔ Committed</span></div>
+      <div class="step"><span class="icon">📦</span><span class="name">Maven Build</span><span class="ok">✔ Packaged</span></div>
+      <div class="step"><span class="icon">⚙️</span><span class="name">Jenkins</span><span class="ok">✔ Passed</span></div>
+      <div class="step"><span class="icon">🌐</span><span class="name">Tomcat 10.1</span><span class="ok">✔ Deployed</span></div>
+    </div>
+
+    <div class="terminal">
+      <div class="bar"><i></i><i></i><i></i></div>
+      <div><span class="muted">$</span> mvn clean package</div>
+      <div>[INFO] BUILD SUCCESS</div>
+      <div><span class="muted">$</span> jenkins deploy --target tomcat</div>
+      <div>[INFO] Deployment completed successfully ✔</div>
+    </div>
+
+    <div class="chips">
+      <span class="chip java">Java</span>
+      <span class="chip maven">Maven</span>
+      <span class="chip jenkins">Jenkins</span>
+      <span class="chip tomcat">Apache Tomcat</span>
+    </div>
+
+    <p class="footer">Made with ❤️ by Durga &bull; College Project Demonstration</p>
+  </main>
 </body>
 </html>
